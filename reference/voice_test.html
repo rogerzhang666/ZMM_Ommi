@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>语音对话测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            position: relative;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .file-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            display: block;
+            margin: 0 auto;
+            width: 200px;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .status {
+            margin-top: 20px;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+        .response-box {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            min-height: 100px;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #2196F3;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .hidden {
+            display: none;
+        }
+        .audio-container {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px dashed #ddd;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+        }
+        .audio-label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+        .audio-player {
+            width: 100%;
+            margin-top: 15px;
+        }
+        /* 侧边栏菜单样式 */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0;
+            background-color: #333;
+            overflow-x: hidden;
+            transition: 0.3s;
+            z-index: 999;
+            padding-top: 60px;
+        }
+        .sidebar.active {
+            width: 250px;
+        }
+        .sidebar a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #f1f1f1;
+            display: block;
+            transition: 0.3s;
+            white-space: nowrap;
+        }
+        .sidebar a:hover {
+            background-color: #555;
+        }
+        .sidebar .current {
+            background-color: #4CAF50;
+        }
+        .sidebar .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 30px;
+            color: #f1f1f1;
+            cursor: pointer;
+        }
+        .menu-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            background-color: #4CAF50;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        /* 内容区域调整 */
+        .content {
+            transition: margin-left 0.3s;
+        }
+        .content.shifted {
+            margin-left: 250px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边菜单按钮 -->
+    <div class="menu-toggle" id="menuToggle">☰</div>
+    
+    <!-- 侧边菜单 -->
+    <div class="sidebar" id="sidebar">
+        <span class="close-btn" id="closeBtn">&times;</span>
+        <a href="/">与赵敏敏通话</a>
+        <a href="/text_test">文本对话测试</a>
+        <a href="/voice_test" class="current">语音对话测试</a>
+        <a href="/voice_record_test">语音录制测试</a>
+    </div>
+
+    <div class="content" id="content">
+        <div class="container">
+            <h1>语音对话测试</h1>
+            <div class="input-group">
+                <label for="audioFile">上传语音文件：</label>
+                <input type="file" id="audioFile" class="file-input" accept="audio/*" />
+                
+                <div class="audio-container">
+                    <span class="audio-label">上传的语音文件预览：</span>
+                    <audio id="uploadedAudio" controls style="width: 100%"></audio>
+                </div>
+            </div>
+            
+            <button id="sendButton" class="btn">发送语音</button>
+            
+            <div id="status" class="status">等待上传语音文件...</div>
+            
+            <div class="response-box">
+                <div id="audioResponse" class="hidden">
+                    <span class="audio-label">语音回复：</span>
+                    <audio id="responseAudio" controls style="width: 100%"></audio>
+                </div>
+                <div id="textResponse" class="hidden"></div>
+            </div>
+            
+            <a href="/" class="back-link">返回主页</a>
+        </div>
+    </div>
+
+    <script>
+        const audioFile = document.getElementById('audioFile');
+        const uploadedAudio = document.getElementById('uploadedAudio');
+        const sendButton = document.getElementById('sendButton');
+        const statusText = document.getElementById('status');
+        const audioResponse = document.getElementById('audioResponse');
+        const textResponse = document.getElementById('textResponse');
+        const responseAudio = document.getElementById('responseAudio');
+        
+        // 当选择文件时预览上传的音频
+        audioFile.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const audioUrl = URL.createObjectURL(file);
+                uploadedAudio.src = audioUrl;
+                statusText.textContent = '已选择音频文件，点击"发送语音"按钮开始处理';
+            } else {
+                uploadedAudio.src = '';
+                statusText.textContent = '等待上传语音文件...';
+            }
+        });
+        
+        sendButton.addEventListener('click', async () => {
+            const file = audioFile.files[0];
+            if (!file) {
+                alert('请先选择一个语音文件');
+                return;
+            }
+            
+            try {
+                // 更新状态
+                statusText.textContent = '正在上传并处理语音...';
+                audioResponse.classList.add('hidden');
+                textResponse.classList.add('hidden');
+                
+                // 创建表单数据
+                const formData = new FormData();
+                formData.append('audio', file);
+                
+                // 发送请求
+                const response = await fetch('/voice-test', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    try {
+                        // 尝试获取音频响应
+                        const audioBlob = await response.blob();
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        
+                        // 显示音频播放器
+                        responseAudio.src = audioUrl;
+                        audioResponse.classList.remove('hidden');
+                        
+                        responseAudio.onloadeddata = () => {
+                            statusText.textContent = '收到语音响应';
+                        };
+                        
+                        responseAudio.onerror = () => {
+                            // 音频加载失败，尝试显示错误信息
+                            statusText.textContent = '音频加载失败';
+                            showErrorText('无法播放音频响应');
+                        };
+                    } catch (err) {
+                        console.error('音频处理错误:', err);
+                        showErrorText('音频处理错误');
+                    }
+                } else {
+                    // 显示错误信息
+                    const errorData = await response.json();
+                    statusText.textContent = '请求失败';
+                    
+                    if (errorData.text_response) {
+                        showErrorText(`服务器返回文本: ${errorData.text_response}`);
+                    } else {
+                        showErrorText(`错误: ${errorData.error || '未知错误'}`);
+                    }
+                }
+            } catch (err) {
+                console.error('请求错误:', err);
+                statusText.textContent = '请求失败';
+                showErrorText(`请求错误: ${err.message}`);
+            }
+        });
+        
+        function showErrorText(message) {
+            textResponse.textContent = message;
+            textResponse.classList.remove('hidden');
+        }
+        
+        // 侧边菜单功能
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const closeBtn = document.getElementById('closeBtn');
+        const content = document.getElementById('content');
+        
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.add('active');
+            content.classList.add('shifted');
+        });
+        
+        closeBtn.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            content.classList.remove('shifted');
+        });
+        
+        // 点击内容区域关闭菜单
+        document.addEventListener('click', (e) => {
+            if (!sidebar.contains(e.target) && e.target !== menuToggle) {
+                sidebar.classList.remove('active');
+                content.classList.remove('shifted');
+            }
+        });
+    </script>
+</body>
+</html>

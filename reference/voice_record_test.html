@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>语音录制测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            position: relative;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .record-section {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            min-width: 200px;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .btn.recording {
+            background-color: #f44336;
+        }
+        .btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            color: #666;
+        }
+        .log-container {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .log-entry.info {
+            color: #0066cc;
+        }
+        .log-entry.error {
+            color: #dc3545;
+        }
+        .log-entry.success {
+            color: #28a745;
+        }
+        .saved-file {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            display: none;
+        }
+        .saved-file a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        .saved-file a:hover {
+            text-decoration: underline;
+        }
+        audio {
+            width: 100%;
+            margin-top: 10px;
+        }
+        /* 侧边栏菜单样式 */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0;
+            background-color: #333;
+            overflow-x: hidden;
+            transition: 0.3s;
+            z-index: 999;
+            padding-top: 60px;
+        }
+        .sidebar.active {
+            width: 250px;
+        }
+        .sidebar a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #f1f1f1;
+            display: block;
+            transition: 0.3s;
+            white-space: nowrap;
+        }
+        .sidebar a:hover {
+            background-color: #555;
+        }
+        .sidebar .current {
+            background-color: #4CAF50;
+        }
+        .sidebar .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 30px;
+            color: #f1f1f1;
+            cursor: pointer;
+        }
+        .menu-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            background-color: #4CAF50;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        /* 内容区域调整 */
+        .content {
+            transition: margin-left 0.3s;
+        }
+        .content.shifted {
+            margin-left: 250px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边菜单按钮 -->
+    <div class="menu-toggle" id="menuToggle">☰</div>
+    
+    <!-- 侧边菜单 -->
+    <div class="sidebar" id="sidebar">
+        <span class="close-btn" id="closeBtn">&times;</span>
+        <a href="/" >与赵敏敏通话</a>
+        <a href="/text_test">文本对话测试</a>
+        <a href="/voice_test">语音对话测试</a>
+        <a href="/voice_record_test" class="current">语音录制测试</a>
+    </div>
+    
+    <div class="content" id="content">
+        <div class="container">
+            <h1>语音录制测试</h1>
+            
+            <div class="record-section">
+                <button id="recordButton" class="btn">开始录音</button>
+                <button id="stopButton" class="btn" disabled>停止录音</button>
+                
+                <div id="status" class="status">请点击"开始录音"按钮录制语音</div>
+            </div>
+            
+            <div id="savedFile" class="saved-file">
+                <div>文件已保存: <a id="fileLink" href="#" target="_blank"></a></div>
+                <audio id="audioPlayer" controls></audio>
+            </div>
+            
+            <div id="logContainer" class="log-container"></div>
+        </div>
+    </div>
+    
+    <script>
+        // 侧边菜单功能
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const closeBtn = document.getElementById('closeBtn');
+        const content = document.getElementById('content');
+        
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.add('active');
+            content.classList.add('shifted');
+        });
+        
+        closeBtn.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            content.classList.remove('shifted');
+        });
+        
+        // 点击内容区域关闭菜单
+        document.addEventListener('click', (e) => {
+            if (!sidebar.contains(e.target) && e.target !== menuToggle) {
+                sidebar.classList.remove('active');
+                content.classList.remove('shifted');
+            }
+        });
+        
+        // 使用原生MediaRecorder，实现最简单稳定的录音
+        document.addEventListener('DOMContentLoaded', function() {
+            const recordButton = document.getElementById('recordButton');
+            const stopButton = document.getElementById('stopButton');
+            const statusText = document.getElementById('status');
+            const savedFile = document.getElementById('savedFile');
+            const fileLink = document.getElementById('fileLink');
+            const audioPlayer = document.getElementById('audioPlayer');
+            const logContainer = document.getElementById('logContainer');
+            
+            let mediaRecorder;
+            let audioChunks = [];
+            
+            // 添加日志
+            function addLog(message, type = 'info') {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('zh-CN', {hour12: false});
+                
+                const entry = document.createElement('div');
+                entry.className = `log-entry ${type}`;
+                entry.textContent = `${timeString} - ${message}`;
+                
+                logContainer.insertBefore(entry, logContainer.firstChild);
+                console.log(`[${type.toUpperCase()}] ${message}`);
+            }
+            
+            // 开始录音
+            recordButton.addEventListener('click', async () => {
+                try {
+                    addLog('请求麦克风权限...');
+                    
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        audio: {
+                            channelCount: 1,
+                            sampleRate: 44100,
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true
+                        }
+                    });
+                    
+                    addLog('获取到麦克风权限', 'success');
+                    
+                    // 检查音频轨道
+                    const audioTracks = stream.getAudioTracks();
+                    if (audioTracks.length > 0) {
+                        const track = audioTracks[0];
+                        addLog(`使用音频设备: ${track.label}`, 'info');
+                        
+                        const settings = track.getSettings();
+                        if (settings) {
+                            addLog(`音频设置: 通道=${settings.channelCount}, 采样率=${settings.sampleRate}`);
+                        }
+                    }
+                    
+                    // 创建MediaRecorder
+                    const options = {};
+                    // 通过检测浏览器支持的最佳音频格式
+                    if (MediaRecorder.isTypeSupported('audio/wav')) {
+                        options.mimeType = 'audio/wav';
+                    } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+                        options.mimeType = 'audio/webm';
+                    } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+                        options.mimeType = 'audio/ogg';
+                    }
+                    
+                    addLog(`使用录音格式: ${options.mimeType || '浏览器默认格式'}`);
+                    
+                    mediaRecorder = new MediaRecorder(stream, options);
+                    audioChunks = [];
+                    
+                    mediaRecorder.addEventListener('start', () => {
+                        addLog('开始录音', 'success');
+                        statusText.textContent = '正在录音...';
+                        recordButton.disabled = true;
+                        stopButton.disabled = false;
+                        recordButton.classList.add('recording');
+                        savedFile.style.display = 'none';
+                    });
+                    
+                    mediaRecorder.addEventListener('dataavailable', (event) => {
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                            addLog(`收到音频数据: ${event.data.size} 字节`);
+                        }
+                    });
+                    
+                    mediaRecorder.addEventListener('stop', () => {
+                        addLog('录音已停止', 'success');
+                        
+                        // 释放麦克风
+                        stream.getTracks().forEach(track => track.stop());
+                        
+                        // 恢复按钮状态
+                        recordButton.disabled = false;
+                        stopButton.disabled = true;
+                        recordButton.classList.remove('recording');
+                        
+                        statusText.textContent = '录音已完成，正在处理...';
+                        
+                        if (audioChunks.length === 0) {
+                            addLog('没有录制到音频数据', 'error');
+                            statusText.textContent = '录音失败，请重试';
+                            return;
+                        }
+                        
+                        // 自动上传录音
+                        uploadAudio();
+                    });
+                    
+                    // 检测音频音量
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const analyser = audioContext.createAnalyser();
+                    const source = audioContext.createMediaStreamSource(stream);
+                    source.connect(analyser);
+                    analyser.fftSize = 256;
+                    const bufferLength = analyser.frequencyBinCount;
+                    const dataArray = new Uint8Array(bufferLength);
+                    
+                    function checkVolume() {
+                        if (mediaRecorder && mediaRecorder.state === 'recording') {
+                            analyser.getByteFrequencyData(dataArray);
+                            let sum = 0;
+                            for (let i = 0; i < bufferLength; i++) {
+                                sum += dataArray[i];
+                            }
+                            const average = sum / bufferLength;
+                            addLog(`当前音量: ${average.toFixed(2)}`);
+                            
+                            if (average < 5) {
+                                addLog('警告: 音量太低，可能没有声音输入', 'error');
+                            }
+                            
+                            setTimeout(checkVolume, 2000);
+                        }
+                    }
+                    
+                    // 开始录音
+                    mediaRecorder.start(100);
+                    // 启动音量检测
+                    setTimeout(checkVolume, 1000);
+                    
+                } catch (error) {
+                    addLog(`录音错误: ${error.message}`, 'error');
+                    statusText.textContent = '无法访问麦克风，请确保已授予权限';
+                }
+            });
+            
+            // 停止录音
+            stopButton.addEventListener('click', () => {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    addLog('停止录音...');
+                    mediaRecorder.stop();
+                }
+            });
+            
+            // 上传音频
+            async function uploadAudio() {
+                try {
+                    addLog('准备上传录音...');
+                    
+                    const audioBlob = new Blob(audioChunks);
+                    addLog(`音频大小: ${audioBlob.size} 字节`);
+                    
+                    if (audioBlob.size === 0) {
+                        addLog('错误: 音频文件为空', 'error');
+                        return;
+                    }
+                    
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, 'recording.webm');
+                    
+                    addLog('开始上传音频文件');
+                    statusText.textContent = '正在上传录音...';
+                    
+                    const response = await fetch('/voice-record-test', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`服务器返回错误: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        addLog(`保存成功: ${data.filename}`, 'success');
+                        statusText.textContent = '录音已保存';
+                        
+                        // 显示文件信息
+                        fileLink.href = `/static/${data.filename}`;
+                        fileLink.textContent = data.filename;
+                        
+                        // 设置音频播放器
+                        audioPlayer.src = `/static/${data.filename}`;
+                        
+                        // 显示音频控件
+                        savedFile.style.display = 'block';
+                    } else {
+                        addLog(`保存失败: ${data.message}`, 'error');
+                        statusText.textContent = '录音保存失败';
+                    }
+                } catch (error) {
+                    addLog(`上传错误: ${error.message}`, 'error');
+                    statusText.textContent = '录音上传失败';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
