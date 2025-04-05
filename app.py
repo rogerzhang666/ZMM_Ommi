@@ -1,6 +1,6 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 import os
-import requests
+from openai import OpenAI
 from dotenv import load_dotenv
 
 # 加载环境变量
@@ -8,23 +8,20 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# 通义千问API配置
-QIANWEN_API_KEY = os.getenv('QIANWEN_API_KEY')
-QIANWEN_API_URL = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
+# 初始化OpenAI客户端
+client = OpenAI(
+    api_key=os.getenv('QIANWEN_API_KEY'),
+    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+)
 
 def chat_with_qianwen(message):
     """
-    与通义千问API交互
+    与通义千问API交互（使用OpenAI兼容模式）
     """
-    headers = {
-        "Authorization": f"Bearer {QIANWEN_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    data = {
-        "model": "qwen-omni-turbo",
-        "input": {
-            "messages": [
+    try:
+        completion = client.chat.completions.create(
+            model="qwen-omni-turbo",
+            messages=[
                 {
                     "role": "system",
                     "content": "你的名字是赵敏敏，一个活泼可爱的女孩。请用活泼可爱的语气回答问题。保持回答简洁。"
@@ -33,14 +30,19 @@ def chat_with_qianwen(message):
                     "role": "user",
                     "content": message
                 }
-            ]
-        }
-    }
-    
-    try:
-        response = requests.post(QIANWEN_API_URL, headers=headers, json=data)
-        response.raise_for_status()
-        return response.json()['output']['text']
+            ],
+            modalities=["text"],  # 目前只使用文本模态
+            stream=True  # 必须使用流式输出
+        )
+        
+        # 收集流式响应
+        response_text = ""
+        for chunk in completion:
+            if chunk.choices:
+                if chunk.choices[0].delta.content:
+                    response_text += chunk.choices[0].delta.content
+        
+        return response_text
     except Exception as e:
         return f"抱歉，我现在有点累了，休息一下~（错误：{str(e)}）"
 
