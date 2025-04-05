@@ -16,7 +16,14 @@ def chat():
         return jsonify({"error": "消息不能为空哦~"}), 400
     
     response = chat_with_qianwen(user_message)
-    return jsonify({"response": response})
+    # 返回包含文本和音频路径的响应
+    return jsonify({
+        "response": {
+            "text": response["text"],
+            "audio": response["audio"],
+            "is_audio": response["is_audio"]
+        }
+    })
 
 @main_bp.route('/')
 def index():
