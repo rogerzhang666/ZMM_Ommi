@@ -8,7 +8,6 @@
 - 微信沟通界面：类似于微信的对话框聊天界面，可以输入文字，发送语音、图片，赵敏敏也可以回复文字和语音。
 - 电话沟通界面：类似于电话的语音对话界面，双工交互，可以实现语音对话。
 
-
 # 三、项目落地
 
 ## 3.1 项目计划（RoadMap）
@@ -68,14 +67,42 @@ venv\Scripts\activate
 pip install -r requirements.txt
 
 # 配置环境变量
-在项目根目录创建.env文件，内容示例：
-QIANWEN_API_KEY=your_api_key_here
+在项目根目录创建.env文件，内容参考.env.example
 
 # 启动服务
-flask run --port 5000
+python main.py
+```
+
+## 项目结构
+```
+ZMM_Ommi/
+│
+├── app/                     # 应用代码
+│   ├── __init__.py          # 包初始化
+│   ├── routes.py            # 路由定义
+│   ├── services/            # 服务层
+│   │   ├── __init__.py      
+│   │   └── chat_service.py  # 聊天服务
+│   ├── static/              # 静态资源
+│   └── templates/           # HTML模板
+│
+├── config/                  # 配置文件目录
+│   ├── __init__.py
+│   └── settings.py          # 应用配置
+│
+├── reference/               # 参考文件
+├── venv/                    # 虚拟环境
+├── .env                     # 环境变量（不提交到版本控制）
+├── .env.example             # 环境变量示例
+├── .gitignore               # Git忽略文件
+├── config.json              # 系统提示配置
+├── main.py                  # 入口文件
+├── README.md                # 项目说明
+└── requirements.txt         # 依赖列表
 ```
 
 ## 注意事项
 1. 需自行申请通义千问API密钥
 2. 语音功能需要安装ffmpeg环境
 3. 生产环境建议使用gunicorn部署
+4. 项目使用新结构，运行方式从`flask run`更改为`python main.py`

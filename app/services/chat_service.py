@@ -1,16 +1,12 @@
-from flask import Flask, request, jsonify, render_template
 import os
 import json
 from openai import OpenAI
-from dotenv import load_dotenv
+import httpx
 
-# 加载环境变量
-load_dotenv()
-
-app = Flask(__name__)
-
-# 加载配置文件
 def load_config():
+    """
+    加载配置文件
+    """
     try:
         with open('config.json', 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -20,10 +16,14 @@ def load_config():
 
 config = load_config()
 
+# 创建自定义的HTTP客户端
+http_client = httpx.Client()
+
 # 初始化OpenAI客户端
 client = OpenAI(
     api_key=os.getenv('QIANWEN_API_KEY'),
-    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+    http_client=http_client
 )
 
 def chat_with_qianwen(message):
@@ -60,27 +60,3 @@ def chat_with_qianwen(message):
         return response_text
     except Exception as e:
         return f"抱歉，我现在有点累了，休息一下~（错误：{str(e)}）"
-
-@app.route('/api/chat', methods=['POST'])
-def chat():
-    """
-    处理聊天请求的API端点
-    """
-    data = request.json
-    user_message = data.get('message', '')
-    
-    if not user_message:
-        return jsonify({"error": "消息不能为空哦~"}), 400
-    
-    response = chat_with_qianwen(user_message)
-    return jsonify({"response": response})
-
-@app.route('/')
-def index():
-    """
-    返回聊天页面
-    """
-    return render_template('chat.html')
-
-if __name__ == '__main__':
-    app.run(debug=True)
