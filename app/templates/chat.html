@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>与赵敏敏聊天</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #333;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #6a89cc, #4a69bd);
+            padding: 15px 0;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 500;
+            color: #fff;
+            letter-spacing: 1px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-container {
+            max-width: 100%;
+            margin: 60px 0 75px;
+            padding: 15px 20px;
+            flex-grow: 1;
+            overflow-y: auto;
+            background-color: #f5f7fa;
+            -webkit-overflow-scrolling: touch;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.7) 1px, transparent 1px),
+                             linear-gradient(90deg, rgba(255, 255, 255, 0.7) 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-position: center center;
+        }
+
+        .message {
+            display: flex;
+            margin: 18px 0;
+            align-items: flex-start;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .avatar {
+            width: 45px;
+            height: 45px;
+            margin: 0 12px;
+            flex-shrink: 0;
+            transition: transform 0.2s ease;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            border: 2px solid #fff;
+        }
+
+        .message-content {
+            max-width: calc(85% - 70px);
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+            font-size: 16px;
+            line-height: 1.5;
+            word-break: break-word;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .user .message-content {
+            background-color: #4aafff;
+            color: white;
+            margin-right: 6px;
+            border-top-right-radius: 5px;
+        }
+
+        .bot .message-content {
+            background-color: #fff;
+            margin-left: 6px;
+            border-top-left-radius: 5px;
+        }
+
+        .message-content::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            border-style: solid;
+            border-width: 8px;
+        }
+
+        .user .message-content::before {
+            right: -13px;
+            border-color: transparent transparent transparent #4aafff;
+        }
+
+        .bot .message-content::before {
+            left: -13px;
+            border-color: transparent #fff transparent transparent;
+        }
+
+        .input-container {
+            background-color: #fff;
+            padding: 12px 15px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            border-top: 1px solid #eaeaea;
+            height: 75px;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .input-wrapper {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        #message-input {
+            flex-grow: 1;
+            padding: 12px 18px;
+            border: 1px solid #eaeaea;
+            border-radius: 24px;
+            outline: none;
+            font-size: 16px;
+            background: #f9f9f9;
+            height: 48px;
+            margin-right: 12px;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        #message-input:focus {
+            border-color: #4aafff;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(74, 175, 255, 0.2);
+        }
+
+        .send-button {
+            padding: 0;
+            width: 48px;
+            height: 48px;
+            background-color: #4aafff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(74, 175, 255, 0.3);
+        }
+
+        .send-button:hover {
+            background-color: #3a9eee;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 175, 255, 0.4);
+        }
+
+        .send-button:active {
+            background-color: #2a8edf;
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(74, 175, 255, 0.3);
+        }
+
+        /* 初始提示消息样式 */
+        .initial-message {
+            text-align: center;
+            padding: 30px 20px;
+            color: #8a8a8a;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        /* 音频播放控件样式 */
+        .audio-control {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .audio-button {
+            width: 36px;
+            height: 36px;
+            background-color: #6a89cc;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-right: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+        }
+
+        .audio-button:hover {
+            background-color: #4a69bd;
+            transform: scale(1.05);
+        }
+
+        .audio-button:active {
+            transform: scale(0.95);
+        }
+
+        .audio-button svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+
+        .audio-bar {
+            height: 4px;
+            flex-grow: 1;
+            background-color: #e0e0e0;
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .audio-progress {
+            height: 100%;
+            width: 0%;
+            background-color: #6a89cc;
+            border-radius: 2px;
+            transition: width 0.1s linear;
+        }
+
+        .audio-time {
+            font-size: 12px;
+            color: #888;
+            margin-left: 8px;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        /* 禁用的音频按钮样式 */
+        .audio-button.disabled {
+            background-color: #888;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>与赵敏敏聊天</h1>
+    </div>
+    
+    <div id="chat-box" class="chat-container">
+        <div class="initial-message">
+            你好！我是赵敏敏，很高兴认识你~ 有什么我可以帮到你的吗？
+        </div>
+    </div>
+    
+    <div class="input-container">
+        <div class="input-wrapper">
+            <input type="text" id="message-input" placeholder="说点什么吧...">
+            <button class="send-button" onclick="sendMessage()">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="24px" height="24px">
+                    <path d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const defaultUserAvatar = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgM2MxLjY2IDAgMyAxLjM0IDMgM3MtMS4zNCAzLTMgMy0zLTEuMzQtMy0zIDEuMzQtMyAzLTN6bTAgMTQuMmMtMi41IDAgNC43MS0xLjI4LTYtMy4yMi4wMy0xLjk5IDQtMy4wOCA2LTMuMDggMS45OSAwIDUuOTcgMS4wOSA2IDMuMDgtMS4yOSAxLjk0LTMuNSAzLjIyLTYgMy4yMnoiIGZpbGw9IiM0YWFmZmYiLz48L3N2Zz4=';
+        let currentPlayingAudio = null; // 当前正在播放的音频元素
+        let currentPlayingButton = null; // 当前正在播放的按钮
+        
+        // 音频播放器映射，存储所有创建的音频元素
+        const audioPlayers = new Map();
+        
+        // SVG图标
+        const playIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="24px" height="24px">
+            <path d="M0 0h24v24H0z" fill="none"/>
+            <path d="M8 5v14l11-7z"/>
+        </svg>`;
+        
+        const pauseIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="24px" height="24px">
+            <path d="M0 0h24v24H0z" fill="none"/>
+            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+        </svg>`;
+
+        // 在页面加载时自动聚焦输入框
+        window.onload = function() {
+            document.getElementById('message-input').focus();
+            
+            // 记录所有音频按钮和ID
+            const allAudioButtons = document.querySelectorAll('.audio-button');
+            console.log(`页面加载时找到了 ${allAudioButtons.length} 个音频按钮`);
+            
+            const audioIds = new Set();
+            allAudioButtons.forEach(button => {
+                const audioId = button.getAttribute('data-audio-id');
+                const audioPath = button.getAttribute('data-audio');
+                if (audioIds.has(audioId)) {
+                    console.warn('发现重复的音频ID:', audioId);
+                }
+                audioIds.add(audioId);
+                console.log('音频按钮:', audioId, audioPath);
+                
+                // 确保每个按钮都有对应的audio元素
+                const audioElement = document.getElementById(audioId);
+                if (!audioElement) {
+                    console.error('音频按钮没有对应的audio元素:', audioId);
+                }
+            });
+        };
+        
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' + secs : secs}`;
+        }
+
+        function appendMessage(role, content) {
+            // 如果是第一条消息，移除初始提示
+            const initialMsg = document.querySelector('.initial-message');
+            if (initialMsg) {
+                initialMsg.remove();
+            }
+
+            const chatBox = document.getElementById('chat-box');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role === 'user' ? 'user' : 'bot'}`;
+
+            // 创建头像容器
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'avatar';
+            const avatarImg = document.createElement('img');
+            avatarImg.src = role === 'user' ? defaultUserAvatar : '/static/zmm.png';
+            avatarImg.alt = role === 'user' ? '你' : '赵敏敏';
+            avatarDiv.appendChild(avatarImg);
+
+            // 创建消息内容容器
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            // 重置最后音频按钮变量，确保每次只处理最新的音频
+            if (role === 'bot') {
+                window.lastAudioButton = null;
+                window.lastAudioId = null;
+            }
+            
+            if (typeof content === 'object' && content.text) {
+                // 支持简单链接转换
+                const linkedContent = content.text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color:inherit;text-decoration:underline;">$1</a>');
+                contentDiv.innerHTML = linkedContent;
+                
+                // 如果有音频，添加音频播放控件
+                if (content.audio && content.is_audio) {
+                    const audioId = `audio-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+                    console.log('添加新的音频按钮:', audioId, '路径:', content.audio);
+                    
+                    // 使用新的函数添加音频按钮
+                    const audioButton = addAudioButton(contentDiv, content.audio, audioId);
+                    
+                    // 保存最新的音频按钮引用
+                    if (role === 'bot') {
+                        window.lastAudioButton = audioButton;
+                        window.lastAudioId = audioId;
+                    }
+                }
+            } else {
+                // 如果是纯文本，直接显示
+                const linkedContent = content.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color:inherit;text-decoration:underline;">$1</a>');
+                contentDiv.innerHTML = linkedContent;
+            }
+
+            // 组装消息
+            messageDiv.appendChild(avatarDiv);
+            messageDiv.appendChild(contentDiv);
+            chatBox.appendChild(messageDiv);
+            
+            // 滚动到底部（带平滑效果）
+            chatBox.scrollTo({
+                top: chatBox.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+
+        function addAudioButton(contentDiv, audioPath, audioId) {
+            console.log('创建音频按钮:', audioId, '音频路径:', audioPath);
+            
+            // 直接创建音频元素，而不是通过innerHTML
+            const audioElement = document.createElement('audio');
+            audioElement.id = audioId;
+            audioElement.preload = 'none';
+            audioElement.style.display = 'none';
+            audioElement.dataset.buttonId = audioId;
+            audioElement.dataset.audioPath = audioPath;
+            
+            // 创建音频控件
+            const audioControl = document.createElement('div');
+            audioControl.className = 'audio-control';
+            
+            // 创建按钮元素
+            const audioButtonDiv = document.createElement('div');
+            audioButtonDiv.className = 'audio-button';
+            audioButtonDiv.setAttribute('data-audio', audioPath);
+            audioButtonDiv.setAttribute('data-audio-id', audioId);
+            audioButtonDiv.innerHTML = playIcon;
+            audioButtonDiv.onclick = function() {
+                togglePlay(this);
+            };
+            
+            // 创建进度条和时间显示
+            const audioBarDiv = document.createElement('div');
+            audioBarDiv.className = 'audio-bar';
+            
+            const progressDiv = document.createElement('div');
+            progressDiv.className = 'audio-progress';
+            progressDiv.id = `progress-${audioId}`;
+            audioBarDiv.appendChild(progressDiv);
+            
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'audio-time';
+            timeDiv.id = `time-${audioId}`;
+            timeDiv.textContent = '0:00';
+            
+            // 组装音频控件
+            audioControl.appendChild(audioButtonDiv);
+            audioControl.appendChild(audioBarDiv);
+            audioControl.appendChild(timeDiv);
+            audioControl.appendChild(audioElement); // 直接将音频元素添加到控件中
+            
+            // 将整个控件添加到内容div
+            contentDiv.appendChild(audioControl);
+            
+            console.log('成功创建音频按钮和元素，ID:', audioId);
+            
+            return audioButtonDiv; // 返回按钮元素
+        }
+
+        function tryPlayAudio(audioElement, button, progressBar, timeDisplay, audioId) {
+            const audioPath = button.getAttribute('data-audio');
+            
+            // 输出更详细的日志，帮助调试
+            console.log(`尝试播放音频 - 按钮数据:`, {
+                'ID': audioId,
+                '音频路径': audioPath,
+                '按钮元素': button
+            });
+            
+            // 为非阻塞播放添加重试机制
+            let retryCount = 0;
+            const maxRetries = 3;
+            const retryInterval = 500; // ms
+            
+            const attemptPlay = function() {
+                try {
+                    // 确保音频路径正确设置
+                    if (!audioElement.src || !audioElement.src.includes(audioPath)) {
+                        audioElement.src = '/' + audioPath;
+                        console.log('重新设置音频源:', audioElement.src);
+                    }
+                    
+                    console.log(`尝试播放音频 (第${retryCount + 1}次): ${audioId}`);
+                    const playPromise = audioElement.play();
+                    
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            console.log('音频播放成功:', audioId);
+                            // 更新当前播放的音频和按钮引用
+                            currentPlayingAudio = audioElement;
+                            currentPlayingButton = button;
+                        }).catch(error => {
+                            if (retryCount < maxRetries) {
+                                console.warn(`播放失败，${retryInterval}ms后重试 (${retryCount + 1}/${maxRetries})`, audioId);
+                                retryCount++;
+                                setTimeout(attemptPlay, retryInterval);
+                            } else {
+                                console.error('多次尝试后播放音频失败:', error ? error : '未知错误');
+                                button.innerHTML = playIcon;
+                                button.classList.remove('playing');
+                                
+                                // 只有当明确判断文件不存在时才禁用按钮
+                                if (error && (
+                                    error.name === 'NotFoundError' || 
+                                    (audioElement.error && audioElement.error.code === 4)
+                                )) {
+                                    console.log('音频文件不存在，禁用按钮');
+                                    button.classList.add('disabled');
+                                    button.setAttribute('title', '音频文件不可用');
+                                }
+                            }
+                        });
+                    }
+                } catch (error) {
+                    console.error('播放音频时出错:', error);
+                    button.innerHTML = playIcon;
+                    button.classList.remove('playing');
+                }
+            };
+            
+            // 第一次尝试播放
+            attemptPlay();
+            
+            // 更新播放进度
+            audioElement.ontimeupdate = function() {
+                if (audioElement.duration > 0) {
+                    const percent = (audioElement.currentTime / audioElement.duration) * 100;
+                    progressBar.style.width = `${percent}%`;
+                    timeDisplay.textContent = formatTime(audioElement.currentTime);
+                }
+            };
+            
+            // 处理播放结束
+            audioElement.onended = function() {
+                console.log('音频播放结束:', audioId);
+                button.innerHTML = playIcon;
+                button.classList.remove('playing');
+                progressBar.style.width = '0%';
+                timeDisplay.textContent = '0:00';
+                
+                if (currentPlayingAudio === audioElement) {
+                    currentPlayingAudio = null;
+                    currentPlayingButton = null;
+                }
+            };
+            
+            // 处理错误
+            audioElement.onerror = function(e) {
+                if (retryCount < maxRetries) {
+                    console.warn(`音频加载错误，${retryInterval}ms后重试 (${retryCount + 1}/${maxRetries})`, audioId);
+                    retryCount++;
+                    setTimeout(attemptPlay, retryInterval);
+                } else {
+                    console.error('多次尝试后音频加载错误:', audioElement.error, '音频ID:', audioId);
+                    button.innerHTML = playIcon;
+                    button.classList.remove('playing');
+                    
+                    // 只有当明确判断文件不存在时才禁用按钮
+                    if (audioElement.error && audioElement.error.code === 4 && audioElement.networkState === 3) {
+                        console.log('音频文件确认不存在，禁用按钮');
+                        button.classList.add('disabled');
+                        button.setAttribute('title', '音频文件不可用');
+                    }
+                    
+                    if (currentPlayingAudio === audioElement) {
+                        currentPlayingAudio = null;
+                        currentPlayingButton = null;
+                    }
+                }
+            };
+        }
+
+        function togglePlay(button) {
+            // 如果按钮被禁用，直接返回
+            if (button.classList.contains('disabled')) {
+                console.log('音频按钮已禁用，不能播放');
+                return;
+            }
+            
+            const audioPath = button.getAttribute('data-audio');
+            const audioId = button.getAttribute('data-audio-id');
+            
+            console.log('请求播放音频 - 按钮ID:', audioId, '音频路径:', audioPath);
+            
+            // 获取对应的音频元素 - 先尝试从button的父元素中找
+            let audioElement = button.closest('.audio-control').querySelector('audio');
+            
+            // 如果找不到，再尝试从ID获取
+            if (!audioElement) {
+                audioElement = document.getElementById(audioId);
+            }
+            
+            if (!audioElement) {
+                console.error('找不到音频元素:', audioId);
+                return;
+            }
+            
+            console.log('找到对应的音频元素:', audioId, audioElement);
+            
+            // 获取进度条和时间显示元素
+            const progressBar = document.getElementById(`progress-${audioId}`);
+            const timeDisplay = document.getElementById(`time-${audioId}`);
+            
+            if (!progressBar || !timeDisplay) {
+                console.error('找不到进度条或时间显示元素:', audioId);
+            }
+            
+            console.log(`切换播放音频 ID=${audioId}, 路径=${audioPath}`);
+            
+            // 如果有其他音频正在播放，先停止它
+            if (currentPlayingAudio && currentPlayingAudio !== audioElement) {
+                console.log('停止之前的音频:', currentPlayingAudio.id);
+                currentPlayingAudio.pause();
+                currentPlayingAudio.currentTime = 0;
+                
+                // 重置之前的按钮和进度条
+                if (currentPlayingButton) {
+                    currentPlayingButton.innerHTML = playIcon;
+                    currentPlayingButton.classList.remove('playing');
+                    
+                    // 重置进度条和时间
+                    const prevAudioId = currentPlayingButton.getAttribute('data-audio-id');
+                    const prevProgressBar = document.getElementById(`progress-${prevAudioId}`);
+                    const prevTimeDisplay = document.getElementById(`time-${prevAudioId}`);
+                    
+                    if (prevProgressBar) prevProgressBar.style.width = '0%';
+                    if (prevTimeDisplay) prevTimeDisplay.textContent = '0:00';
+                }
+            }
+            
+            // 如果当前音频是暂停状态或者是新的音频
+            if (audioElement.paused) {
+                // 确保当前音频路径与按钮匹配
+                console.log('开始检查音频路径');
+                console.log('按钮路径:', audioPath);
+                console.log('音频当前源:', audioElement.src);
+                
+                // 删除之前的事件监听器
+                audioElement.oncanplaythrough = null;
+                audioElement.ontimeupdate = null;
+                audioElement.onended = null;
+                audioElement.onerror = null;
+                
+                // 重新设置音频源，确保使用正确的路径
+                console.log('重新设置音频源为:', audioPath);
+                audioElement.src = '/' + audioPath; // 确保使用绝对路径
+                
+                // 设置按钮为播放状态
+                button.innerHTML = pauseIcon;
+                button.classList.add('playing');
+                
+                // 尝试播放音频
+                tryPlayAudio(audioElement, button, progressBar, timeDisplay, audioId);
+            } else {
+                // 如果音频正在播放，暂停它
+                console.log('暂停音频:', audioId);
+                audioElement.pause();
+                button.innerHTML = playIcon;
+                button.classList.remove('playing');
+                
+                if (currentPlayingAudio === audioElement) {
+                    currentPlayingAudio = null;
+                    currentPlayingButton = null;
+                }
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // 禁用输入和发送按钮
+            const sendButton = document.querySelector('.send-button');
+            input.disabled = true;
+            sendButton.disabled = true;
+            
+            // 重置上一个音频按钮的引用
+            window.lastAudioButton = null;
+            window.lastAudioId = null;
+            
+            // 停止当前正在播放的音频
+            if (currentPlayingAudio) {
+                console.log('停止当前正在播放的音频');
+                currentPlayingAudio.pause();
+                currentPlayingAudio.currentTime = 0;
+                
+                if (currentPlayingButton) {
+                    currentPlayingButton.innerHTML = playIcon;
+                    currentPlayingButton.classList.remove('playing');
+                }
+                
+                currentPlayingAudio = null;
+                currentPlayingButton = null;
+            }
+            
+            appendMessage('user', message);
+            input.value = '';
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({message: message}),
+                });
+                
+                const data = await response.json();
+                appendMessage('bot', data.response);
+            } catch (error) {
+                appendMessage('bot', '抱歉，我遇到了一些问题，请稍后再试~');
+            } finally {
+                // 重新启用输入和发送按钮
+                input.disabled = false;
+                sendButton.disabled = false;
+                input.focus();
+            }
+        }
+
+        // 支持回车发送消息
+        document.getElementById('message-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // 防止输入框换行
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
